@@ -1,3 +1,5 @@
+const Network = 42;
+
 const ContractAddrs = {
 	'42': '0x73aed2c6234636643412c2fc0823e97069e67f95',
 }

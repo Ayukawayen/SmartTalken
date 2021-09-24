@@ -1,5 +1,3 @@
-const Network = 42;
-
 var adapter = {};
 adapter.provider = new ethers.providers.Web3Provider(window.ethereum, Network);
 adapter.contract = new ethers.Contract(ContractAddrs[Network], ContractABI, adapter.provider.getSigner());
