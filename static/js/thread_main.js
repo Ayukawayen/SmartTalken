@@ -36,7 +36,7 @@ async function loadTalkens() {
 	if(!g.tid) return;
 
 	let thread = await adapter.getThread(g.tid, g.account);
-	g.talkens.push(thread.talkens[0]);
+	g.talkens.push(thread.talken);
 	for(let i=0;i<thread.responses.length;++i) {
 		g.responses.push(thread.responses[i]);
 	}

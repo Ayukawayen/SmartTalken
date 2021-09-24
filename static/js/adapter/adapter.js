@@ -51,117 +51,12 @@ adapter.getSubscribingStat = async (addr)=>{
 	result.countSubscriber = await adapter.getSubscriberCount(addr);
 	
 	let logs;
+	
 	logs = await adapter.contract.queryFilter( adapter.contract.filters.Talken(null, addr) );
-
-	if(logs.length <= 0) return result;
+	result.countTalken = logs.length;
 	
-	logs.sort(sortLogDesc);
-	
-	for(let i=0; i<logs.length; ++i) {
-		let item = logs[i];
-		if(!item.args.talkenId.eq(item.args.threadId)) {
-			result.countResponse++;
-		} else {
-			result.countTalken++;
-		}
-	}
-	
-	return result;
-}
-
-adapter.getTalkenStats = async (filters, account)=>{
-	let result = {};
-	
-	let logs;
-	
-	logs = await adapter.contract.queryFilter( filters.like );
-	
-	logs.sort(sortLogDesc);
-	
-	let states = {};
-	logs.forEach((item)=>{
-		if(item.removed) return;
-		
-		states[item.args.talkenId] ||= {};
-		result[item.args.talkenId] ||= {
-			countLike: 0,
-			countResponse: 0,
-		};
-		
-		if(states[item.args.talkenId][item.args.liker]) return;
-		
-		states[item.args.talkenId][item.args.liker] = item.args.state;
-		
-		if(item.args.state > 0) {
-			result[item.args.talkenId].countLike++;
-			
-			if(item.args.liker == account) {
-				result[item.args.talkenId].isLiked = true;
-			}
-		}
-	});
-
-	logs = await adapter.contract.queryFilter( filters.response );
-	logs.forEach((item)=>{
-		if(item.removed) return;
-		
-		if(item.args.talkenId.eq(item.args.threadId)) return;
-		
-		result[item.args.threadId] ||= {
-			countLike: 0,
-			countResponse: 0,
-		};
-		
-		result[item.args.threadId].countResponse++;
-	});
-	
-	return result;
-}
-
-
-adapter.getPublisher = async (addr, account)=>{
-	let result = {};
-	
-	result.address = addr;
-	result.displayName = displayName(addr);
-	result.isSubscribed = await adapter.getIsSubscribed(addr, account);
-
-	let talkenStats = await adapter.getTalkenStatsByPublisher(addr, account);
-	
-	let logs = await adapter.contract.queryFilter( adapter.contract.filters.Talken(null, addr) );
-
-	logs.sort(sortLogDesc);
-	
-	result.talkens = [];
-	result.responses = [];
-	for(let i=0;i<logs.length;++i) {
-		let item = logs[i];
-		let talken = {
-			talkenId: item.args.talkenId,
-			content: item.args.content,
-			stat: talkenStats[item.args.talkenId] || {},
-			info: {
-				publisher: {
-					address: item.args.publisher,
-					displayName: displayName(item.args.publisher),
-				},
-				publishTime: new Date(Number(item.args.time)*1000),
-			},
-		};
-		
-		if(!item.args.talkenId.eq(item.args.threadId)) {
-			result.responses.push(talken);
-		} else {
-			result.talkens.push(talken);
-		}
-	}
-	
-	result.stat = {
-		countSubscriber: await adapter.getSubscriberCount(addr),
-		countTalken: result.talkens.length,
-		countResponse: result.responses.length,
-	};
-
+	logs = await adapter.contract.queryFilter( adapter.contract.filters.Response(null, null, addr) );
+	result.countResponse = logs.length;
 	
 	return result;
 }
@@ -181,6 +76,8 @@ adapter.getSubscriberCount = async (addr)=>{
 	let logs = await adapter.contract.queryFilter( adapter.contract.filters.Subscribe(null, addr) );
 
 	logs.forEach((item)=>{
+		if(item.removed) return;
+		
 		result += item.args.state;
 	});
 	
@@ -188,30 +85,29 @@ adapter.getSubscriberCount = async (addr)=>{
 }
 
 
-adapter.getTalkenStatsByPublisher = async (addr, account)=>{
-	return await adapter.getTalkenStats( {
-		like:adapter.contract.filters.Like(null, addr),
-		response: adapter.contract.filters.Talken(null, addr),
-	}, account );
-}
-
-adapter.getThread = async (tid, account)=>{
+adapter.getPublisher = async (addr, account)=>{
 	let result = {};
-
-	let stats = await adapter.getTalkenStatsByTalkenId(tid, account);
 	
-	let logs = await adapter.contract.queryFilter( adapter.contract.filters.Talken(null, null, tid) );
+	result.address = addr;
+	result.displayName = displayName(addr);
+	result.isSubscribed = await adapter.getIsSubscribed(addr, account);
+
+	let likeStats = await adapter.getLikeStats(adapter.contract.filters.Like(null, addr), account);
+	let responseStats = await adapter.getResponseStats(adapter.contract.filters.Response(null, addr), account);
+	
+	let logs = await adapter.contract.queryFilter( adapter.contract.filters.Talken(null, addr) );
 
 	logs.sort(sortLogDesc);
 	
 	result.talkens = [];
-	result.responses = [];
-	for(let i=0;i<logs.length;++i) {
-		let item = logs[i];
+	logs.forEach((item)=>{
+		if(item.removed) return;
+		
 		let talken = {
 			talkenId: item.args.talkenId,
 			content: item.args.content,
-			stat: stats[item.args.talkenId] || null,
+			likeStat: likeStats[item.args.talkenId] || {},
+			responseStat: responseStats[item.args.talkenId] || {},
 			info: {
 				publisher: {
 					address: item.args.publisher,
@@ -221,22 +117,130 @@ adapter.getThread = async (tid, account)=>{
 			},
 		};
 		
-		if(!item.args.talkenId.eq(item.args.threadId)) {
-			result.responses.push(talken);
-		} else {
-			result.talkens.push(talken);
-		}
-	}
+		result.talkens.push(talken);
+	});
+	
+	result.stat = {
+		countSubscriber: await adapter.getSubscriberCount(addr),
+		countTalken: result.talkens.length,
+	};
+
 	
 	return result;
 }
 
-adapter.getTalkenStatsByTalkenId = async (talkenId, account)=>{
-	return await adapter.getTalkenStats( {
-		like: adapter.contract.filters.Like(talkenId),
-		response: adapter.contract.filters.Talken(null, null, talkenId),
-	}, account );
+adapter.getThread = async (tid, account)=>{
+	let result = {
+		talken: null,
+		responses: [],
+	};
+
+	let logs;
+	
+	logs = await adapter.contract.queryFilter( adapter.contract.filters.Talken(tid) );
+	if(logs.length <= 0) return result;
+	
+	let likeStats = await adapter.getLikeStats(adapter.contract.filters.Like(tid), account);
+	
+	let item = logs[0];
+	result.talken = {
+		talkenId: item.args.talkenId,
+		content: item.args.content,
+		likeStat: likeStats[item.args.talkenId] || {},
+		responseStat: { countResponse:0, },
+		info: {
+			publisher: {
+				address: item.args.publisher,
+				displayName: displayName(item.args.publisher),
+			},
+			publishTime: new Date(Number(item.args.time)*1000),
+		},
+	};
+
+	logs = await adapter.contract.queryFilter( adapter.contract.filters.Response(tid) );
+	logs.sort(sortLogDesc);
+	
+	logs.forEach((item)=>{
+		if(item.removed) return;
+		
+		let response = {
+			content: item.args.content,
+			info: {
+				publisher: {
+					address: item.args.responser,
+					displayName: displayName(item.args.responser),
+				},
+				publishTime: new Date(Number(item.args.time)*1000),
+			},
+		};
+		
+		result.responses.push(response);
+		
+		
+		result.talken.responseStat.countResponse++;
+		
+		if(item.args.response == account) {
+			result.talken.responseStat.isResponsed = true;
+		}
+	});
+	
+	return result;
 }
+
+
+adapter.getLikeStats = async (filter, account)=>{
+	let result = {};
+	
+	let logs = await adapter.contract.queryFilter( filter );
+	
+	logs.sort(sortLogDesc);
+	
+	let states = {};
+	logs.forEach((item)=>{
+		if(item.removed) return;
+		
+		states[item.args.talkenId] ||= {};
+		if(states[item.args.talkenId][item.args.liker]) return;
+		states[item.args.talkenId][item.args.liker] = item.args.state;
+		
+		result[item.args.talkenId] ||= {
+			countLike: 0,
+		};
+		if(item.args.state > 0) {
+			result[item.args.talkenId].countLike++;
+			
+			if(item.args.liker == account) {
+				result[item.args.talkenId].isLiked = true;
+			}
+		}
+	});
+	
+	return result;
+}
+
+adapter.getResponseStats = async (filter, account)=>{
+	let result = {};
+	
+	let logs = await adapter.contract.queryFilter( filter );
+
+	logs.forEach((item)=>{
+		if(item.removed) return;
+		
+		result[item.args.talkenId] ||= {
+			countResponse: 0,
+		};
+		
+		result[item.args.talkenId].countResponse++;
+		
+		if(item.args.response == account) {
+			result[item.args.talkenId].isResponsed = true;
+		}
+	});
+
+	return result;
+}
+
+
 
 
 adapter.getAccount = async ()=>{
