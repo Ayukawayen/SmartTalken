@@ -1,0 +1,54 @@
+* {
+	margin: 0;
+	padding: 0;
+	
+	box-sizing: border-box;
+}
+
+html, body {
+	font-size: 16px;
+	font-family: sans-serif;
+	
+	background-color: #000;
+	color: #ccc;
+}
+
+body {
+	padding: 0 1rem;
+}
+
+a, a:link, a:visited, a:hover, a:active {
+	text-decoration: none;
+	color: inherit;
+}
+
+#app h1 {
+	font-size: 2rem;
+	margin: 0 0 0.5rem;
+	border-width: 0 0 1px 0;
+	border-style: solid;
+	
+	background-color: #000;
+	color: #fff;
+	border-color: #fff;
+}
+
+#app h1 >a {
+	display:inline-block;
+	
+	padding:1rem;
+	margin-left:-1rem;
+}
+
+#app h1:after {
+	content: "Beta";
+	
+	font-size:1rem;
+	
+	padding:0.25em;
+	border:1px solid #fff;
+	border-radius:0.5em;
+	
+	vertical-align: middle;
+	
+}

@@ -1,0 +1,15 @@
+.publisherStat >span:after {
+}
+
+.publisherStat .countSubscriber:after {
+	content:" subscribers";
+}
+
+.publisherStat .countTalken:after {
+	content:" posts";
+}
+
+.publisherStat .countResponse:after {
+	content:" replies";
+}
+

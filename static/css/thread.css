@@ -1,0 +1,26 @@
+.thread >h2 {
+	padding: 0.5em 0.25em;
+	background-color: #666;
+}
+
+.thread .responses {
+	padding:0.25em 0 0 0.5em;
+}
+
+.thread .editor {
+	padding:0.25em 0 0.5em 0.5em;
+}
+
+.thread .editor .content {
+	display:block;
+	
+	width:100%;
+	padding:0.25em;
+}
+
+.thread .editor .post {
+	display:block;
+	
+	margin:0.25em 0 0 auto;
+	padding:0.25em;
+}

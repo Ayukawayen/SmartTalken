@@ -1,0 +1,48 @@
+.publisher .profile {
+	display: inline-block;
+	padding: 0.5em;
+}
+
+.publisher .profile .name {
+}
+
+.publisher .profile .publisherStat {
+	font-size: 0.8rem;
+}
+
+
+.publisher .subscribe {
+	display: inline-block;
+	margin: 0.5em 0 0 1em;
+	
+	vertical-align: top;
+}
+.publisher .subscribe >button {
+	padding: 0.5em;
+	border: solid 1px #fff;
+	border-radius: 0.5em;
+	
+	background-color:#333;
+	color:#ccc;
+}
+.publisher .subscribe >button:hover {
+	background-color:#666;
+	color:#fff;
+}
+
+.publisher .subscribe[subscribed] >button {
+	background-color:#ff6;
+	color:#333;
+}
+.publisher .subscribe[subscribed] >button:hover {
+	background-color:#cc3;
+	color:#000;
+}
+
+.publisher .posts {
+	margin: 0.5em 0 0;
+}
+.publisher .posts >h2 {
+	padding: 0.5em 0.25em;
+	background-color: #666;
+}
